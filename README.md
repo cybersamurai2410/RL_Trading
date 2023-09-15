@@ -1,4 +1,4 @@
-![image](https://github.com/cybersamurai2410/RL_Trading/assets/66138996/e60ee4e0-76b7-4356-85a4-0a9d66df559a)# MSc Advanced Computing - Individual Project
+# MSc Advanced Computing - Individual Project
 ## Enhancing Time Series Trading Strategies with Deep Reinforcement Learning Methodologies
 
 **Aims & Objectives:**<br>
@@ -16,3 +16,9 @@ The aim of this project is to leverage advanced computational techniques with De
 6. Architecture Modification with RNN
 7. Custom Environment and Feature Engineering Technical Indicators
 8. Model Performance Evaluation
+
+**Conclusion**<br>
+* Utilising RNN architecture with DRL is capable of making more profitable trades compared to a standard MLP architecture.
+* Ensemble modelling by aggregating actions via voting/averaging combines decisions of various models for more robustness but does not lead to better performance.
+* Continuous trading environment offers more flexibility in simulating real-world trading scenarios compared to discrete trading environments as well as generalising multiple stocks.
+  * Utilising technical indicators for trading allow the algorithms to improve pattern recognition on the stock data.

@@ -21,3 +21,5 @@ The aim of this project is to leverage advanced computational techniques with De
 * Ensemble modelling by aggregating actions via voting/averaging combines decisions of various models for more robustness but does not lead to better performance.
 * Continuous trading environment offers more flexibility in simulating real-world trading scenarios compared to discrete trading environments as well as generalising multiple stocks.
   * Utilising technical indicators for trading allow the algorithms to improve pattern recognition on the stock data.
+
+<!-- comment -->

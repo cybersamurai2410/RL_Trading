@@ -1,5 +1,6 @@
-import torch as th
-from torch import nn
+import torch 
+import torch.nn as nn
+import torch.optim as optim
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 from gym import spaces
 from stable_baselines3.common.policies import ActorCriticPolicy
@@ -163,3 +164,125 @@ while True:
 
         plt.show()
         break
+
+# RNN-based Actor-Critic Network definition
+class RNNActorCriticNetwork(nn.Module):
+    def __init__(self, input_dim, hidden_dim, n_layers, action_dim):
+        super(RNNActorCriticNetwork, self).__init__()
+
+        # GRU-based RNN layer
+        self.rnn = nn.GRU(input_dim, hidden_dim, n_layers, batch_first=True)
+        # Actor head: Decides the action to take
+        self.actor = nn.Linear(hidden_dim, action_dim)
+        # Critic head: Estimates the value of a state
+        self.critic = nn.Linear(hidden_dim, 1)
+
+    def forward(self, x, h):
+        # Passing input through RNN
+        x, h = self.rnn(x, h)
+        # Using last timestep for action & value estimation
+        x = x[:, -1, :]
+        return self.actor(x), self.critic(x), h
+
+# Define A2C Agent
+class A2C:
+    def __init__(self, input_dim, hidden_dim, n_layers, action_dim, lr, epsilon_decay):
+        self.network = RNNActorCriticNetwork(input_dim, hidden_dim, n_layers, action_dim)
+        self.optimizer = optim.Adam(self.network.parameters(), lr=lr)
+        self.epsilon = 1.0
+        self.epsilon_decay = epsilon_decay
+        self.epsilon_min = 0.01
+
+    def get_action(self, state):
+        # Epsilon-greedy policy
+        if np.random.rand() < self.epsilon:
+            return np.random.choice([0, 1])
+
+        state = torch.FloatTensor(state).unsqueeze(0)
+        hidden = torch.zeros(self.network.rnn.num_layers, 1, self.network.rnn.hidden_size)
+
+        # Getting action probabilities from the network
+        probs, _, _ = self.network(state, hidden)
+        action_probs = torch.distributions.Categorical(nn.functional.softmax(probs, dim=-1))
+
+        return action_probs.sample().item()
+
+    def update(self, state, action, reward, next_state, done):
+        state = torch.FloatTensor(state).unsqueeze(0)
+        next_state = torch.FloatTensor(next_state).unsqueeze(0)
+        reward = torch.FloatTensor([reward])
+        done = torch.FloatTensor([done])
+
+        # Get current state value and next state value
+        _, value, hidden = self.network(state, torch.zeros(self.network.rnn.num_layers, 1, self.network.rnn.hidden_size))
+        _, next_value, _ = self.network(next_state, hidden)
+
+        # Compute target and advantage
+        td_target = reward + 0.99 * next_value * (1-done)
+        delta = td_target - value
+
+        # Compute actor and critic losses
+        probs, _, _ = self.network(state, hidden)
+        action_probs = torch.distributions.Categorical(nn.functional.softmax(probs, dim=-1))
+        log_prob = action_probs.log_prob(torch.tensor([action]))
+        actor_loss = -log_prob * delta.detach()
+        critic_loss = delta.pow(2)
+
+        # Combine losses and perform backprop
+        loss = actor_loss + critic_loss
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        return loss.item()
+
+env = gym.make('stocks-v0', df=df, frame_bound=(5, 100), window_size=5)
+agent = A2C(2, 128, 2, 2, 0.001, 0.995)
+
+for episode in range(10):
+    print('Episode:', episode)
+    state = env.reset()
+    done = False
+    total_loss = 0
+    step_count = 0
+
+    while not done:
+        action = agent.get_action(state)
+        next_state, reward, done, info = env.step(action)
+        loss = agent.update(state, action, reward, next_state, done)
+        state = next_state
+        total_loss += loss
+        step_count += 1
+
+        print()
+        print(info)
+        print(f'Episode: {episode}, Step: {step_count}, Loss: {loss}')
+        print()
+
+    avg_loss = total_loss/step_count
+    print(f'Episode: {episode}, Average Loss: {avg_loss}')
+    print()
+
+    # Apply epsilon decay for epsilon-greedy policy
+    agent.epsilon = max(agent.epsilon_min, agent.epsilon * agent.epsilon_decay)
+
+def evaluate(agent, env):
+    total_reward = 0
+    obs = env.reset()
+    done = False
+    while not done:
+        action = agent.get_action(obs)
+        obs, reward, done, info = env.step(action)
+        total_reward += reward
+        print(info)
+
+    return info
+
+# Assuming the agent has been trained
+eval_env = gym.make('stocks-v0', df=df, frame_bound=(90, 110), window_size=5)
+info = evaluate(agent, eval_env)
+
+print()
+print(f"Total Reward: {info['total_reward']}")
+print(f"Total Profit: {info['total_profit']}")
+

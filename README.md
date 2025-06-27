@@ -17,7 +17,7 @@ The aim of this project is to leverage advanced computational techniques with De
 8. Model Performance Evaluation
 
 **Conclusion**<br>
-* Utilising RNN architecture with DRL is capable of making more profitable trades compared to a standard MLP architecture, achieving an average of 10% increase on returns as well as increased rewards.
+* Utilising RNN architecture with DRL is capable of making more profitable trades compared to a standard MLP architecture. Achieved 10.7% cumulative return over 6-month backtest, outperforming base models by 2.3%. 
 * Ensemble modelling by aggregating actions via voting/averaging combines decisions of various models for more robustness, but does not lead to better performance than the PPO model, which performs more optimal trading decisions than DQN and A2C.
 * Continuous trading environment offers more flexibility in simulating real-world trading scenarios compared to discrete trading environments as well as generalizing multiple stocks.
   * Utilizing technical indicators for trading allow the algorithms to improve pattern recognition on the stock data.
